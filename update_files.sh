@@ -4,14 +4,48 @@
 # set -e: 确保脚本在任何命令执行失败时立即退出
 set -e
 
+# --- 自动查找项目目录 ---
+BASE_DIR="/www/wwwroot"
+PROJECT_ROOT=""
+
+echo "正在 $BASE_DIR 目录中搜索项目..."
+
+# 遍历 /www/wwwroot/ 下的每一个子目录
+for dir in "$BASE_DIR"/*/; do
+    # 检查是否是一个有效的目录
+    if [ ! -d "$dir" ]; then
+        continue
+    fi
+
+    # 检查是否同时存在这两个关键子目录
+    # (基于你脚本中下载的目标路径来判断)
+    if [ -d "${dir}app/Http/Controllers/V1/User" ] && [ -d "${dir}app/Services" ]; then
+        PROJECT_ROOT="$dir"
+        break # 找到第一个匹配的就停止
+    fi
+done
+
+# 如果没有找到
+if [ -z "$PROJECT_ROOT" ]; then
+    echo "错误：在 $BASE_DIR 中未找到同时包含 'app/Http/Controllers/V1/User' 和 'app/Services' 的项目目录。" >&2
+    exit 1
+fi
+
+echo "成功找到项目目录: $PROJECT_ROOT"
+
+# --- 切换到项目目录 ---
+cd "$PROJECT_ROOT"
+echo "已进入目录: $(pwd)"
+echo ""
+
+
+# --- 文件定义 (使用相对路径) ---
 # 定义文件1
 URL_1="https://raw.githubusercontent.com/1kst/fix2b/refs/heads/main/OrderController.php"
 DEST_1="./app/Http/Controllers/V1/User/OrderController.php"
 
 # 定义文件2
 URL_2="https://raw.githubusercontent.com/1kst/fix2b/refs/heads/main/PaymentService.php"
-# 注意：您的原始请求中，第二个路径为 /app/ServicesPaymentService.php
-# 这里假设您的意思是 ./app/Services/PaymentService.php
 DEST_2="./app/Services/PaymentService.php"
 
 
@@ -43,3 +77,4 @@ echo "PaymentService.php 已覆盖。"
 
 echo ""
 echo "所有文件均已成功更新！"
+
